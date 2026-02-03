@@ -174,8 +174,29 @@ class ApiController extends Controller
     }
     
     // 6. Riwayat (Opsional)
-    public function history() {
-        $transactions = Transaction::with('details')->orderBy('created_at', 'desc')->get();
-        return response()->json($transactions);
+    public function history(Request $request) {
+        $query = Transaction::orderBy('created_at', 'desc');
+
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $startDate = $request->start_date;
+            $endDate = $request->end_date;
+
+        $query->whereDate('created_at', '>=', $startDate)
+                  ->whereDate('created_at', '<=', $endDate);
+        } else {
+            $query->limit(50);
+        }
+
+        $transactions = $query->get();
+
+        $formatted = $transactions->map(function($item) {
+            return [
+                'invoice_number' => $item->invoice_no, 
+                'total_amount'   => $item->total_amount,
+                'created_at'     => $item->created_at->format('d-m-Y H:i'),
+            ];
+        });
+
+        return response()->json($formatted);
     }
 }

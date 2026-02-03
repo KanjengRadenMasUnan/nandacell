@@ -12,4 +12,4 @@ Route::put('/products/{id}', [ApiController::class, 'updateProduct']);
 Route::delete('/products/{id}', [ApiController::class, 'deleteProduct']);
 Route::get('/products', [ApiController::class, 'getAllProducts']);
 Route::post('/checkout', [ApiController::class, 'checkout']);        
-Route::get('/history', [ApiController::class, 'history']);
+Route::get('/transactions', [ApiController::class, 'history']);
