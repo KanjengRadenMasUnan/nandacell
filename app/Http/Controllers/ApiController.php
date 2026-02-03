@@ -191,6 +191,7 @@ class ApiController extends Controller
 
         $formatted = $transactions->map(function($item) {
             return [
+                'transaction_id'  => $item->transaction_id,
                 'invoice_number' => $item->invoice_no, 
                 'total_amount'   => $item->total_amount,
                 'created_at'     => $item->created_at->format('d-m-Y H:i'),
