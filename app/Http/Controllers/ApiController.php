@@ -11,8 +11,7 @@ use Illuminate\Database\QueryException;
 
 class ApiController extends Controller
 {
-    // 1. Tambah Barang
-    public function addProduct(Request $request) {
+        public function addProduct(Request $request) {
         // 1. Logika Request (Sama seperti sebelumnya)
         $request->validate([
             'name'  => 'required',
@@ -147,7 +146,7 @@ class ApiController extends Controller
     
     // 5. Ambil Semua Barang (Untuk Cetak Massal)
     public function getAllProducts() {
-        return response()->json(Product::orderBy('id', 'asc')->get());
+        return response()->json(Product::all()->sortByDesc('created_at')->values());
     }
 
     public function updateProduct(Request $request, $id) {
