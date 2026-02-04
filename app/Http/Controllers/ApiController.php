@@ -18,6 +18,7 @@ class ApiController extends Controller
             'name'  => 'required',
             'price' => 'required|numeric',
             'stock' => 'required|numeric',
+            'category' => 'nullable',
         ]);
 
         try {
@@ -41,6 +42,7 @@ class ApiController extends Controller
             $product->name = $request->name;
             $product->price = $request->price;
             $product->stock = $request->stock;
+            $product->category = $request->category ?? 'Umum';
             
             // Cek apakah berhasil save
             if (!$product->save()) {
@@ -145,7 +147,7 @@ class ApiController extends Controller
     
     // 5. Ambil Semua Barang (Untuk Cetak Massal)
     public function getAllProducts() {
-        return response()->json(Product::all()->sortByDesc('created_at')->values());
+        return response()->json(Product::orderBy('id', 'asc')->get());
     }
 
     public function updateProduct(Request $request, $id) {
@@ -191,12 +193,22 @@ class ApiController extends Controller
 
         $formatted = $transactions->map(function($item) {
             return [
+                'id'  => $item->id,
                 'invoice_number' => $item->invoice_no, 
                 'total_amount'   => $item->total_amount,
                 'created_at'     => $item->created_at->format('d-m-Y H:i'),
+
+                'items' => $item->details->map(function($detail) {
+                    return [
+                        'product_id'   => $detail->product_id,
+                        'product_name' => optional($detail->product)->name ?? 'Produk Terhapus',
+                        'price'        => $detail->subtotal / $detail->qty,
+                        'qty'          => $detail->qty,
+                        'subtotal'     => $detail->subtotal,
+                    ];
+                }),
             ];
         });
-
         return response()->json($formatted);
     }
 }
