@@ -30,7 +30,10 @@ class ApiController extends Controller
                 }
                 $finalCode = trim($request->code);
             } else {
-                $lastProduct = Product::where('code', 'like', 'BRG-%')->orderBy('id', 'desc')->first();
+                $lastProduct = Product::where('code', 'like', 'BRG-%')
+                    ->orderBy('id', 'desc') 
+                    ->lockForUpdate()
+                    ->first();
                 $number = $lastProduct ? ((int)substr($lastProduct->code, 4) + 1) : 1;
                 $finalCode = 'BRG-' . str_pad($number, 4, '0', STR_PAD_LEFT);
             }
