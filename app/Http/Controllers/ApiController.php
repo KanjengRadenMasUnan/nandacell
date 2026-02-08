@@ -50,10 +50,27 @@ class ApiController extends Controller
 
         DB::commit();
 
+<<<<<<< HEAD
         return response()->json([
             'message' => 'Produk berhasil ditambahkan',
             'data' => $product
         ], 201);
+=======
+            // Logika Barcode
+            if ($request->filled('code')) {
+                if (Product::where('code', trim($request->code))->exists()) {
+                    return response()->json(['message' => 'Barcode sudah ada!'], 400);
+                }
+                $finalCode = trim($request->code);
+            } else {
+                $lastProduct = Product::where('code', 'like', 'BRG-%')
+                    ->orderBy('id', 'desc') 
+                    ->lockForUpdate()
+                    ->first();
+                $number = $lastProduct ? ((int)substr($lastProduct->code, 4) + 1) : 1;
+                $finalCode = 'BRG-' . str_pad($number, 4, '0', STR_PAD_LEFT);
+            }
+>>>>>>> fb65328273804ad97b006c8e18d46a6080ea1078
 
     } catch (\Illuminate\Database\QueryException $e) {
         DB::rollBack();
