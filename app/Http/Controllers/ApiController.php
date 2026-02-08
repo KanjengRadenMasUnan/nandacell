@@ -11,60 +11,62 @@ use Illuminate\Database\QueryException;
 
 class ApiController extends Controller
 {
-        public function addProduct(Request $request) {
-        // 1. Logika Request (Sama seperti sebelumnya)
-        $request->validate([
-            'name'  => 'required',
-            'price' => 'required|numeric',
-            'stock' => 'required|numeric',
-            'category' => 'nullable',
+        public function addProduct(Request $request)
+{
+    $request->validate([
+        'name'  => 'required',
+        'price' => 'required|numeric',
+        'stock' => 'required|numeric',
+        'category' => 'nullable',
+        'code' => 'nullable|string',
+    ]);
+
+    DB::beginTransaction();
+
+    try {
+        if ($request->filled('code')) {
+            $finalCode = trim($request->code);
+        } else {
+            $lastProduct = Product::withTrashed()
+                ->where('code', 'like', 'BRG-%')
+                ->orderBy('id', 'desc')
+                ->lockForUpdate()
+                ->first();
+
+            $number = $lastProduct
+                ? ((int)substr($lastProduct->code, 4) + 1)
+                : 1;
+
+            $finalCode = 'BRG-' . str_pad($number, 4, '0', STR_PAD_LEFT);
+        }
+
+        $product = Product::create([
+            'code' => $finalCode,
+            'name' => $request->name,
+            'price' => $request->price,
+            'stock' => $request->stock,
+            'category' => $request->category ?? 'Umum',
         ]);
 
-        try {
-            DB::beginTransaction(); // Mulai Transaksi Database (Biar aman)
+        DB::commit();
 
-            // Logika Barcode
-            if ($request->filled('code')) {
-                if (Product::where('code', trim($request->code))->exists()) {
-                    return response()->json(['message' => 'Barcode sudah ada!'], 400);
-                }
-                $finalCode = trim($request->code);
-            } else {
-                $lastProduct = Product::where('code', 'like', 'BRG-%')->orderBy('id', 'desc')->first();
-                $number = $lastProduct ? ((int)substr($lastProduct->code, 4) + 1) : 1;
-                $finalCode = 'BRG-' . str_pad($number, 4, '0', STR_PAD_LEFT);
-            }
+        return response()->json([
+            'message' => 'Produk berhasil ditambahkan',
+            'data' => $product
+        ], 201);
 
-            // 2. Simpan ke Database
-            $product = new Product();
-            $product->code = $finalCode;
-            $product->name = $request->name;
-            $product->price = $request->price;
-            $product->stock = $request->stock;
-            $product->category = $request->category ?? 'Umum';
-            
-            // Cek apakah berhasil save
-            if (!$product->save()) {
-                DB::rollBack();
-                return response()->json(['message' => 'Gagal menyimpan ke DB'], 500);
-            }
+    } catch (\Illuminate\Database\QueryException $e) {
+        DB::rollBack();
 
-            DB::commit(); // Simpan permanen
-
-            // 3. RETURN RESPONSE (INI YANG TADI HILANG/KOSONG)
+        if ($e->errorInfo[1] == 1062) {
             return response()->json([
-                'message' => 'Success',
-                'data' => $product
-            ], 200);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            // Kembalikan error 500 dengan pesan jelas
-            return response()->json([
-                'message' => 'Server Error: ' . $e->getMessage()
-            ], 500);
+                'message' => 'Kode produk sudah ada'
+            ], 409);
         }
+
+        throw $e;
     }
+}
 
     // 2. Scan Barang (By Code)
     public function getProduct($code) {
