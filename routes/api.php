@@ -4,7 +4,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ApiController;
 
-// Route Wajib Nanda Cell
+Route::get('/ping', function () {
+    return response()->json(['message' => 'pong', 'status' => 'ok']);
+});
 Route::post('/products', [ApiController::class, 'addProduct']);   
 Route::get('/products/search', [ApiController::class, 'searchProduct']);   
 Route::get('/products/{code}', [ApiController::class, 'getProduct']); 
